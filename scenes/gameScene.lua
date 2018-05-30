@@ -100,7 +100,23 @@ local function onShootButton(event)
     return true
 end
 
+-- Function to check the bullets
+local checkBulletsOutOfBounds = function(event)
+    -- Variable for the number of bullets
+    local bulletCounter = 0
 
+    if #playerBullets > 0 then 
+        -- For statement to check the bullets
+        for bulletCounter = #playerBullets, 1, -1 do
+            if playerBullets[bulletCounter].x > display.contentWidth * 2 then
+                playerBullets[bulletCounter]:removeSelf()
+                playerBullets[bulletCounter] = nil
+                table.remove(playerBullets, bulletCounter)
+                print(#playerBullets)
+            end
+        end
+    end 
+end
 
 -- Function to make the character move 
 local moveNinja = function(event)
@@ -124,8 +140,6 @@ local moveNinja = function(event)
         end
     end
 end
-
-
 
 
 -- create()
@@ -222,6 +236,7 @@ function scene:create( event )
     ninja.y = display.contentCentery
     ninja.id = 'ninja'
     physics.addBody(ninja, 'dynamic', {
+        density = 3.0,
         friction = 0.5,
         bounce = 0.0
         })
@@ -256,6 +271,7 @@ function scene:show( event )
         -- Code here runs when the scene is entirely on screen
         Runtime:addEventListener("enterFrame", moveNinja)
         Runtime:addEventListener('enterFrame', ninjaThrow)
+        Runtime:addEventListener('enterFrame', checkBulletsOutOfBounds)
     
     end
 end
