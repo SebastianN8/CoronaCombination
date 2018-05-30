@@ -26,13 +26,82 @@ local ninja = nil
 local rightArrow = nil
 local shootButton = nil
 local jumpButton = nil
-local playerKunais = {}
+local playerBullets = {}
  
  
  
 -- -----------------------------------------------------------------------------------
 -- Scene event functions
 -- -----------------------------------------------------------------------------------
+
+-- Function to make the character change image sheet
+local function onRightArrow(event)
+    if (event.phase == 'began') then
+        if (ninja.sequence ~= 'run') then 
+            ninja.sequence = 'run'
+            ninja:setSequence('run')
+            ninja:play()
+        end
+    elseif (event.phase == 'ended') then
+        if (ninja.sequence ~= 'idle') then
+            ninja.sequence = 'idle'
+            ninja:setSequence('idle')
+            ninja:play()
+        end
+    end
+    return true 
+end
+
+-- function to make the character jump
+local function onJumpButton(event)
+    if (event.phase == 'began') then 
+        if (ninja.sequence ~= 'jump') then 
+            ninja.sequence = 'jump'
+            ninja:setSequence('jump')
+            ninja:play()
+            ninja:setLinearVelocity(150, -1050)
+        end
+    end
+end
+
+--Function to reset from shoot
+local ninjaThrow = function(event)
+    if (ninja.sequence == 'shoot') then
+        ninja.sequence = 'idle'
+        ninja:setSequence('idle')
+        ninja:play()
+    end
+end
+
+-- Function to make the chracter shoot
+local function onShootButton(event)
+    if (event.phase == 'began') then
+        if (ninja.sequence ~= 'shoot') then
+            -- Set sequence
+            ninja.sequence = 'shoot'
+            ninja:setSequence('shoot')
+            ninja:play()
+            timer.performWithDelay(1000, ninjaThrow)
+
+            -- Bullets
+            local aSingleBullet = display.newImage('./assets/sprites/Kunai.png')
+            aSingleBullet.x = ninja.x 
+            aSingleBullet.y = ninja.y
+            physics.addBody(aSingleBullet, 'dynamic')
+            aSingleBullet.isBullet = true
+            aSingleBullet.isFixedRotation = true
+            aSingleBullet.gravityScale = 0
+            aSingleBullet.id = 'bullet'
+            aSingleBullet:setLinearVelocity(1500, 0)
+
+            table.insert(playerBullets, aSingleBullet)
+        end
+    end
+    return true
+end
+
+
+
 -- Function to make the character move 
 local moveNinja = function(event)
     if (ninja.sequence == 'run') then
@@ -45,6 +114,7 @@ local moveNinja = function(event)
 
     -- Statement to set back to idle after jump
     if (ninja.sequence == 'jump') then
+
         local ninjaVelocityX, ninjaVelocityY = ninja:getLinearVelocity()
 
         if ninjaVelocityY == 0 then
@@ -53,8 +123,10 @@ local moveNinja = function(event)
             ninja:play()
         end
     end
-
 end
+
+
+
 
 -- create()
 function scene:create( event )
@@ -62,7 +134,7 @@ function scene:create( event )
     local sceneGroup = self.view
     -- Code here runs when the scene is first created but has not yet appeared on screen
     physics.start()
-    physics.setGravity(0, 10)
+    physics.setGravity(0, 50)
     --physics.setDrawMode('hybrid')
 
     -- Load map to the game
@@ -102,6 +174,11 @@ function scene:create( event )
     local sheetOptionJump = require('assets.spritesheets.ninjaBoy.ninjaBoyJump')
     local sheetJumpNinja = graphics.newImageSheet('./assets/spritesheets/ninjaBoy/ninjaBoyJump.png', sheetOptionJump:getSheet())
 
+    -- Shoot
+    local sheetOptionShoot = require('assets.spritesheets.ninjaBoy.ninjaBoyThrow')
+    local sheetShootNinja = graphics.newImageSheet('./assets/spritesheets/ninjaBoy/ninjaBoyThrow.png', sheetOptionShoot:getSheet())
+
+
 
     -- Sequence data ninja
     local sequence_data_ninja = {
@@ -117,7 +194,7 @@ function scene:create( event )
             name = 'run',
             start = 1,
             count = 10,
-            time = 1000,
+            time = 800,
             loopCount = 0,
             sheet = sheetRunNinja
         },
@@ -125,9 +202,17 @@ function scene:create( event )
             name = 'jump',
             start = 1,
             count = 10,
-            time = 1000,
+            time = 800,
             loopCount = 1,
             sheet = sheetJumpNinja
+        },
+        {
+            name = 'shoot',
+            start = 1,
+            count = 10,
+            time = 1000,
+            loopCount = 1,
+            sheet = sheetShootNinja
         }
     }
 
@@ -138,7 +223,7 @@ function scene:create( event )
     ninja.id = 'ninja'
     physics.addBody(ninja, 'dynamic', {
         friction = 0.5,
-        bounce = 0.1
+        bounce = 0.0
         })
     ninja.isFixedRotation = true
     ninja.sequence = 'idle'
@@ -152,36 +237,6 @@ function scene:create( event )
     sceneGroup:insert(shootButton)
     sceneGroup:insert(jumpButton)
 
-    -- Function to make the character change image sheet
-    function rightArrow:touch(event)
-        if (event.phase == 'began') then
-            if (ninja.sequence ~= 'run') then 
-                ninja.sequence = 'run'
-                ninja:setSequence('run')
-                ninja:play()
-            end
-        elseif (event.phase == 'ended') then
-            if (ninja.sequence ~= 'idle') then
-                ninja.sequence = 'idle'
-                ninja:setSequence('idle')
-                ninja:play()
-            end
-        end
-        return true 
-    end
-
-    -- function to make the character jump
-    function jumpButton:touch(event)
-        if (event.phase == 'began') then 
-            if (ninja.sequence ~= 'jump') then 
-                ninja.sequence = 'jump'
-                ninja:setSequence('jump')
-                ninja:play()
-                ninja:setLinearVelocity(0, 2000)
-            end
-        end
-    end
-
 end
  
  
@@ -193,12 +248,14 @@ function scene:show( event )
  
     if ( phase == "will" ) then
         -- Code here runs when the scene is still off screen (but is about to come on screen)
-        rightArrow:addEventListener('touch', rightArrow)
-        jumpButton:addEventListener('touch', jumpButton)
+        rightArrow:addEventListener('touch', onRightArrow)
+        jumpButton:addEventListener('touch', onJumpButton)
+        shootButton:addEventListener('touch', onShootButton)
 
     elseif ( phase == "did" ) then
         -- Code here runs when the scene is entirely on screen
         Runtime:addEventListener("enterFrame", moveNinja)
+        Runtime:addEventListener('enterFrame', ninjaThrow)
     
     end
 end
@@ -217,6 +274,9 @@ function scene:hide( event )
         -- Code here runs immediately after the scene goes entirely off screen
         rightArrow:addEventListener('touch', rightArrow)
         Runtime:addEventListener('enterFrame', moveNinja)
+        Runtime:addEventListener('enterFrame', ninjaThrow)
+        jumpButton:addEventListener('touch', onJumpButton)
+        shootButton:addEventListener('touch', onShootButton)
  
     end
 end
