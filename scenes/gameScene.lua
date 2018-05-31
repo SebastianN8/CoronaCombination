@@ -59,7 +59,7 @@ local function onJumpButton(event)
             ninja.sequence = 'jump'
             ninja:setSequence('jump')
             ninja:play()
-            ninja:setLinearVelocity(150, -1050)
+            ninja:setLinearVelocity(0, -1050)
         end
     end
 end
