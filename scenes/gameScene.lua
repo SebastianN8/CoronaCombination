@@ -81,7 +81,7 @@ local function onShootButton(event)
             ninja.sequence = 'shoot'
             ninja:setSequence('shoot')
             ninja:play()
-            timer.performWithDelay(1000, ninjaThrow)
+            timer.performWithDelay(500, ninjaThrow)
 
             -- Bullets
             local aSingleBullet = display.newImage('./assets/sprites/Kunai.png')
@@ -224,7 +224,7 @@ function scene:create( event )
             name = 'shoot',
             start = 1,
             count = 10,
-            time = 1000,
+            time = 500,
             loopCount = 1,
             sheet = sheetShootNinja
         }
@@ -270,7 +270,6 @@ function scene:show( event )
     elseif ( phase == "did" ) then
         -- Code here runs when the scene is entirely on screen
         Runtime:addEventListener("enterFrame", moveNinja)
-        Runtime:addEventListener('enterFrame', ninjaThrow)
         Runtime:addEventListener('enterFrame', checkBulletsOutOfBounds)
     
     end
@@ -290,9 +289,9 @@ function scene:hide( event )
         -- Code here runs immediately after the scene goes entirely off screen
         rightArrow:addEventListener('touch', rightArrow)
         Runtime:addEventListener('enterFrame', moveNinja)
-        Runtime:addEventListener('enterFrame', ninjaThrow)
         jumpButton:addEventListener('touch', onJumpButton)
         shootButton:addEventListener('touch', onShootButton)
+        Runtime:addEventListener('enterFrame', checkBulletsOutOfBounds)
  
     end
 end
